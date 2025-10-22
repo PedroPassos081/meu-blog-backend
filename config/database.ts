@@ -4,7 +4,7 @@ export default ({ env }) => ({
     client: 'postgres',
     connection: {
       connectionString: env('DATABASE_URL'),
-      ssl: { rejectUnauthorized: false },
+      ssl: { require: true, rejectUnauthorized: false },
     },
     pool: { min: 0, max: 10 },
     acquireConnectionTimeout: env.int('DATABASE_CONNECTION_TIMEOUT', 60000),
