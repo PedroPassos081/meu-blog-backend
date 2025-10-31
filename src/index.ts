@@ -1,20 +1,31 @@
-// import type { Core } from '@strapi/strapi';
-
+// src/index.ts ou src/index.js (ESM)
 export default {
-  /**
-   * An asynchronous register function that runs before
-   * your application is initialized.
-   *
-   * This gives you an opportunity to extend code.
-   */
-  register(/* { strapi }: { strapi: Core.Strapi } */) {},
+  register() { },
 
-  /**
-   * An asynchronous bootstrap function that runs before
-   * your application gets started.
-   *
-   * This gives you an opportunity to set up your data model,
-   * run jobs, or perform some special logic.
-   */
-  bootstrap(/* { strapi }: { strapi: Core.Strapi } */) {},
+  async bootstrap({ strapi }) {
+    const email = process.env.SEED_ADMIN_EMAIL;
+    const password = process.env.SEED_ADMIN_PASSWORD;
+    if (!email || !password) {
+      strapi.log.info('Seed admin vars not set — skipping admin bootstrap.');
+      return;
+    }
+
+    const superAdmin = await strapi.service('admin::role').getSuperAdmin();
+    const existing = await strapi.query('admin::user').findOne({ where: { email } });
+
+    if (existing) {
+      await strapi.service('admin::user').updateById(existing.id, { password });
+      strapi.log.info(`Admin password reset for ${email}`);
+    } else {
+      await strapi.service('admin::user').create({
+        email,
+        password,
+        firstname: 'Admin',
+        lastname: 'Prod',
+        isActive: true,
+        roles: [superAdmin.id],
+      });
+      strapi.log.info(`Admin created for ${email}`);
+    }
+  },
 };
